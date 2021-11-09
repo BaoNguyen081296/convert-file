@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import './Convert.scss';
-import { Form, Button, Upload, notification } from 'antd';
+import { Form, Button, Upload, notification, Select } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { exportFile } from 'export/json';
-const typeXLSX = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+import { TYPE } from 'utils/utils';
 
-const title = 'Please import the XLSX file.';
-function index() {
+const { Option } = Select;
+
+function Convert() {
+  const [type, setType] = useState(TYPE.TO_XLSX);
+  const formRef = useRef(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const typeXLSX =
+    type === TYPE.TO_JSON
+      ? ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+      : ['application/json'];
+  const title = `Please import the ${type === TYPE.TO_JSON ? 'XLSX' : 'JSON'} file.`;
+
   const normFile = e => {
     if (e && typeXLSX.indexOf(e.file.type) === -1 && e.file.response) {
       notification['error']({
@@ -20,21 +30,39 @@ function index() {
     return e && e.fileList;
   };
   const handleSubmit = e => {
-    exportFile(e.file[0]);
+    exportFile({ type, file: e.file[0].originFileObj });
   };
-  const propsUpload = {
-    name: 'file',
-    listType: 'text',
-    maxCount: 1,
-    accept: typeXLSX
+  const onTypeChange = e => {
+    setType(e);
+    formRef.current.validateFields();
   };
+  const propsUpload = useMemo(
+    () => ({
+      name: 'file',
+      listType: 'text',
+      maxCount: 1,
+      accept: typeXLSX
+    }),
+    [typeXLSX]
+  );
 
   return (
     <div className="_convert">
       <div className="_convert-content">
-        <h1>Convert to JSON</h1>
+        <h1>{type === TYPE.TO_JSON ? 'Convert XLSX to JSON' : 'Convert JSON to XLSX'}</h1>
         <h5>{title}</h5>
-        <Form className="_convert-content-form" onFinish={handleSubmit} initialValues={{}}>
+        <Form
+          ref={formRef}
+          className="_convert-content-form"
+          onFinish={handleSubmit}
+          initialValues={{ type }}
+        >
+          <Form.Item name="type" label="Type">
+            <Select onChange={onTypeChange}>
+              <Option value={TYPE.TO_JSON}>XLSX to JSON</Option>
+              <Option value={TYPE.TO_XLSX}>JSON to XLSX</Option>
+            </Select>
+          </Form.Item>
           <Form.Item
             name="file"
             label="Upload"
@@ -66,4 +94,4 @@ function index() {
     </div>
   );
 }
-export default index;
+export default Convert;
