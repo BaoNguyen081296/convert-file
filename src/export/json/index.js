@@ -1,5 +1,6 @@
 import fs from 'file-saver';
 import { formatDate, TYPE } from 'utils/utils';
+import _isEmpty from 'lodash/isEmpty';
 const ExcelJS = require('exceljs');
 
 export const exportFile = async ({ type = TYPE.TO_JSON, file }) => {
@@ -19,7 +20,7 @@ const handleJsonToExcel = file => {
   workbook.created = new Date();
   workbook.calcProperties.fullCalcOnLoad = true;
   const worksheet = workbook.addWorksheet('JsonToExcel');
-  handleTransformData(file, worksheet);
+  transformDataToXLSX(TYPE.TO_JSON, file, worksheet);
   workbook.xlsx.writeBuffer().then(data => {
     const blob = new Blob([data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -30,20 +31,13 @@ const handleJsonToExcel = file => {
 
 const handleExcelToJson = async file => {
   const workbook = new ExcelJS.Workbook();
-  let data = {};
   let rows = (await workbook.xlsx.load(file)).getWorksheet()._rows;
-  rows.forEach(i => {
-    const { values } = i;
-    data = {
-      ...data,
-      [values[1]]: { ...(data[values[1]] ? data[values[1]] : {}), [values[2]]: values[3] }
-    };
-  });
+  const data = transformDataToJson(rows);
   const blob = new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' });
   return fs.saveAs(blob, 'convertedFile.json');
 };
 
-const handleTransformData = (obj, ws) => {
+const transformDataToXLSX = (obj, ws) => {
   if (typeof obj === 'object') {
     const data = Object.keys(obj);
     data.forEach(i => {
@@ -57,5 +51,60 @@ const handleTransformData = (obj, ws) => {
         ws.addRows([[i, obj[i]]]);
       }
     });
+  }
+};
+
+const transformDataToJson = rows => {
+  try {
+    let obj = {};
+    rows.forEach(i => {
+      const r = i.values;
+      if (!_isEmpty(r)) {
+        switch (r.length) {
+          case 4:
+            obj = { ...obj, [r[1]]: { ...obj[r[1]], [r[2]]: r[3] } };
+            break;
+          case 5:
+            if (!_isEmpty(obj[r[1]])) {
+              if (!_isEmpty(obj[r[1]][r[2]])) {
+                obj = {
+                  ...obj,
+                  [r[1]]: {
+                    ...obj[r[1]],
+                    [r[2]]: {
+                      ...obj[r[1]][r[2]],
+                      [r[3]]: r[4]
+                    }
+                  }
+                };
+              } else {
+                obj = {
+                  ...obj,
+                  [r[1]]: {
+                    ...obj[r[1]],
+                    [r[2]]: {
+                      [r[3]]: r[4]
+                    }
+                  }
+                };
+              }
+            } else {
+              obj = {
+                ...obj,
+                [r[1]]: {
+                  [r[2]]: { [r[3]]: r[4] }
+                }
+              };
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    });
+    return obj;
+  } catch (error) {
+    console.log('error: ', error);
+    return {};
   }
 };
