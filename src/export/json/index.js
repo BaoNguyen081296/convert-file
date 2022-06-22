@@ -15,7 +15,6 @@ export const exportFile = async ({ type = TYPE.TO_JSON, file }) => {
 };
 
 const handleJsonToExcel = file => {
-  console.log('run');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'DeHR';
   workbook.created = new Date();
@@ -38,20 +37,32 @@ const handleExcelToJson = async file => {
   return fs.saveAs(blob, 'convertedFile.json');
 };
 
-const transformDataToXLSX = (obj, ws) => {
-  if (typeof obj === 'object') {
-    const data = Object.keys(obj);
-    data.forEach(i => {
-      if (typeof obj[i] === 'object') {
-        const keys = Object.keys(obj[i]);
-        keys.forEach(item => {
-          let row = [i, item, obj[i][item]];
-          ws.addRows([row]);
-        });
-      } else {
-        ws.addRows([[i, obj[i]]]);
-      }
-    });
+const transformDataToXLSX = (file, ws) => {
+  try {
+    if (typeof file === 'object') {
+      const data = Object.keys(file);
+      data.forEach(d => {
+        if (typeof file[d] === 'object') {
+          const keys = Object.keys(file[d]);
+          keys.forEach(item => {
+            if (typeof file[d][item] === 'object') {
+              Object.keys(file[d][item]).forEach(i => {
+                let row = [d, item, i, file[d][item][i]];
+                ws.addRows([row]);
+              });
+            } else {
+              let row = [d, item, file[d][item]];
+              ws.addRows([row]);
+            }
+          });
+        } else {
+          ws.addRows([[d, file[d]]]);
+        }
+      });
+    }
+  } catch (error) {
+    console.log('error: ', error);
+    throw error;
   }
 };
 
