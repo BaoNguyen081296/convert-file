@@ -842,7 +842,7 @@
         }
     },
     "notification": {
-        "verified_kyc": "Chờ mkt dịch",
+        "verified_kyc": "Xác minh eKYC thành công. Bạn có thể bắt đầu đặt giá hồ sơ.",
         "reject_kyc": {
             "title": "eKYC của bạn bị từ chối vì",
             "wrong_name": "Sai tên.",
@@ -850,7 +850,7 @@
             "expired_passport": "Hộ chiếu hết hạn.",
             "wrong_id": "Sai số Hộ chiếu.",
             "incorrected_action": "Hành động eKYC không đúng.",
-            "not_match_image": "Chờ mkt dịch.",
+            "not_match_image": "Nhận diện khuôn mặt trên eKYC chưa khớp với ảnh hộ chiếu.",
             "ekyc_blur": "eKYC bị mờ.",
             "selfie_incorrect": "Ảnh đại diện không chính xác.",
             "do_again": "Vui lòng làm lại eKYC."
