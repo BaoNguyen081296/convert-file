@@ -15,12 +15,13 @@ export const exportFile = async ({ type = TYPE.TO_JSON, file }) => {
 };
 
 const handleJsonToExcel = file => {
+  console.log('run');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'DeHR';
   workbook.created = new Date();
   workbook.calcProperties.fullCalcOnLoad = true;
   const worksheet = workbook.addWorksheet('JsonToExcel');
-  transformDataToXLSX(TYPE.TO_JSON, file, worksheet);
+  transformDataToXLSX(file, worksheet);
   workbook.xlsx.writeBuffer().then(data => {
     const blob = new Blob([data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
