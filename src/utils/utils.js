@@ -10,3 +10,5 @@ export const TYPE = {
 export const formatDate = (inputDate, formatString = 'DD/MM/YYYY') => {
   return inputDate && moment(inputDate).format(formatString);
 };
+
+export const EXCEL_PASSWORD = 'DEHR_DEV';

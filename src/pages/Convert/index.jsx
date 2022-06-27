@@ -29,8 +29,8 @@ function Convert() {
     if (Array.isArray(e)) return e;
     return e && e.fileList;
   };
-  const handleSubmit = e => {
-    exportFile({ type, file: e.file[0].originFileObj });
+  const handleSubmit = ({ file }) => {
+    exportFile({ type, file });
   };
   const onTypeChange = e => {
     setType(e);
@@ -40,7 +40,7 @@ function Convert() {
     () => ({
       name: 'file',
       listType: 'text',
-      maxCount: 1,
+      maxCount: 2,
       accept: typeXLSX
     }),
     [typeXLSX]
