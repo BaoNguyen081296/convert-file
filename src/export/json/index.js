@@ -1,6 +1,6 @@
 /* eslint-disable no-loop-func */
 import fs from 'file-saver';
-import { formatDate, TYPE, EXCEL_PASSWORD } from 'utils/utils';
+import { formatDate, TYPE, EXCEL_PASSWORD, DESTINATION_FILE } from 'utils/utils';
 import _isEmpty from 'lodash/isEmpty';
 const ExcelJS = require('exceljs');
 
@@ -38,9 +38,9 @@ const styles = {
 
 const worksheetAddRow = (ws, data, index) => ws.addRow(data);
 
-export const exportFile = async ({ type = TYPE.TO_JSON, file }) => {
+export const exportFile = async ({ type = TYPE.TO_JSON, file, destination }) => {
   try {
-    if (type === TYPE.TO_JSON) handleExcelToJson(file);
+    if (type === TYPE.TO_JSON) handleExcelToJson(file, destination);
     else {
       let secondFile = null;
       for (let i = file.length - 1; i >= 0; i--) {
@@ -67,9 +67,10 @@ const handleJsonToExcel = (file, secondFile) => {
   });
 };
 
-const handleExcelToJson = async file => {
-  let rows = (await workbook.xlsx.load(file)).getWorksheet()._rows;
-  const data = transformDataToJson(rows);
+const handleExcelToJson = async (file, destination) => {
+  let rows = (await workbook.xlsx.load(file[0].originFileObj)).getWorksheet()._rows;
+  rows.shift();
+  const data = transformDataToJson(rows, destination);
   const blob = new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' });
   return fs.saveAs(blob, 'convertedFile.json');
 };
@@ -123,52 +124,62 @@ const transformDataToXLSX = async (file, ws, secondFile) => {
   }
 };
 
-const transformDataToJson = rows => {
+const transformDataToJson = (rows, destination) => {
   try {
-    console.log('rows: ', rows);
     let obj = {};
+    const iKey = {
+      first: 1,
+      second: 2,
+      third: 3
+    };
     rows.forEach(i => {
-      const r = i.values;
-      if (!_isEmpty(r)) {
-        switch (r.length) {
-          case 4:
-            obj = { ...obj, [r[1]]: { ...obj[r[1]], [r[2]]: r[3] } };
-            break;
-          case 5:
-            if (!_isEmpty(obj[r[1]])) {
-              if (!_isEmpty(obj[r[1]][r[2]])) {
-                obj = {
-                  ...obj,
-                  [r[1]]: {
-                    ...obj[r[1]],
-                    [r[2]]: {
-                      ...obj[r[1]][r[2]],
-                      [r[3]]: r[4]
-                    }
-                  }
-                };
-              } else {
-                obj = {
-                  ...obj,
-                  [r[1]]: {
-                    ...obj[r[1]],
-                    [r[2]]: {
-                      [r[3]]: r[4]
-                    }
-                  }
-                };
-              }
+      const { values: curArr } = i;
+      if (!_isEmpty(curArr)) {
+        let currentDestinationIndex = 0;
+        if (destination === DESTINATION_FILE.TO_FIRST) {
+          currentDestinationIndex = 4;
+        } else {
+          currentDestinationIndex = 5;
+        }
+        const { first, second, third } = iKey;
+        const curIndexValue = curArr[currentDestinationIndex];
+        if (_isEmpty(curArr[third])) {
+          obj = {
+            ...obj,
+            [curArr[first]]: {
+              ...(obj[curArr[first]]
+                ? { ...obj[curArr[first]], [curArr[second]]: curIndexValue }
+                : { [curArr[second]]: curIndexValue })
+            }
+          };
+        } else {
+          if (_isEmpty(obj[curArr[first]])) {
+            obj = {
+              ...obj,
+              [curArr[first]]: { [curArr[second]]: { [curArr[third]]: curIndexValue } }
+            };
+          } else {
+            if (_isEmpty(obj[curArr[first]][curArr[second]])) {
+              obj = {
+                ...obj,
+                [curArr[first]]: {
+                  ...obj[curArr[first]],
+                  [curArr[second]]: { [curArr[third]]: curIndexValue }
+                }
+              };
             } else {
               obj = {
                 ...obj,
-                [r[1]]: {
-                  [r[2]]: { [r[3]]: r[4] }
+                [curArr[first]]: {
+                  ...obj[curArr[first]],
+                  [curArr[second]]: {
+                    ...obj[curArr[first]][curArr[second]],
+                    [curArr[third]]: curIndexValue
+                  }
                 }
               };
             }
-            break;
-          default:
-            break;
+          }
         }
       }
     });

@@ -7,6 +7,11 @@ export const TYPE = {
   JSON: 'JSON'
 };
 
+export const DESTINATION_FILE = {
+  TO_FIRST: 'TO_FIRST',
+  TO_SECOND: 'TO_SECOND'
+};
+
 export const formatDate = (inputDate, formatString = 'DD/MM/YYYY') => {
   return inputDate && moment(inputDate).format(formatString);
 };
